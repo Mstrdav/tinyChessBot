@@ -58,10 +58,9 @@ public class MyBot : IChessBot
                     bestMove = move;
                 }
                 alpha = Math.Max(alpha,bestEvaluation);
-                if(beta<=alpha)
-                    Console.WriteLine("break");
-                    break;
                 board.UndoMove(move);
+                if(beta<=alpha)
+                    break;
             }
             if(depth == 0)
                 return (T) Convert.ChangeType(bestMove,typeof(T));
@@ -78,10 +77,9 @@ public class MyBot : IChessBot
                 if(minimaxSon < worstEvaluation)
                     worstEvaluation = minimaxSon;
                 beta = Math.Min(beta,worstEvaluation);
-                if(beta <= alpha)
-                    Console.WriteLine("break");
-                    break;
                 board.UndoMove(move);
+                if(beta <= alpha)
+                    break;
             }
             return (T) Convert.ChangeType(worstEvaluation,typeof(T));
         }
