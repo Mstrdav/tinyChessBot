@@ -1,5 +1,6 @@
 ﻿using ChessChallenge.API;
 using System;
+using System.Collections;
 
 namespace ChessChallenge.Example
 {
@@ -53,10 +54,22 @@ namespace ChessChallenge.Example
 
         PlayerColor botColor;
         int depthMax = 4;
-        //Dictionary<ulong,int> evaluatedPositions = new Dictionary<ulong,int>();
+        // evaluate position is a has table referencing foreach position evaluated
+        // its evaluation and the depth at which it was evaluated
+        Hashtable evaluatedPositions = new Hashtable();
 
-        int Evaluation(Board board, PlayerColor myBotColor)
+        int Evaluation(Board board, PlayerColor myBotColor, int depth)
         {
+            // check in hashtable if position has already been evaluated with a depth >= current depth
+            // if yes, return the evaluation
+            // if no, evaluate the position and add it to the hashtable
+            if (evaluatedPositions.ContainsKey(board.ZobristKey))
+            {
+                (int, int) evaluationAndDepth = ((int, int)) evaluatedPositions[board.ZobristKey];
+                if (evaluationAndDepth.Item2 >= depth)
+                    return evaluationAndDepth.Item1;
+            }
+
             int evaluation = 0;
             if (board.IsDraw())
                 return evaluation;
@@ -75,7 +88,11 @@ namespace ChessChallenge.Example
 
             evaluation = GetLegalMoves(board, "ADV").Length - GetLegalMoves(board, "BOT").Length;
 
-            return (int)myBotColor * evaluation * (board.IsWhiteToMove ? -1 : 1);
+            // add evaluation to hashtable
+            evaluation = (int)myBotColor * evaluation * (board.IsWhiteToMove ? -1 : 1);
+
+            evaluatedPositions.Add(board.ZobristKey, (evaluation, depth));
+            return evaluation;
         }
 
         (Move, int) Minimax(Board board, int depth, string player, PlayerColor myBotColor, int alpha, int beta)
@@ -93,7 +110,7 @@ namespace ChessChallenge.Example
             }
 
             if (depth == 0)
-                return (new Move(), Evaluation(board, myBotColor));
+                return (new Move(), Evaluation(board, myBotColor, depth));
 
             else if (player == "BOT")
             {
@@ -136,15 +153,6 @@ namespace ChessChallenge.Example
         public Move Think(Board board, Timer timer)
         {
             botColor = board.IsWhiteToMove ? PlayerColor.White : PlayerColor.Black;
-
-            // change depthMax depending on how many moves are possible
-
-            if (depthMax != (board.GetLegalMoves().Length < 12 ? 6 : 4) && !board.IsInCheck())
-            {
-                Console.WriteLine("Depth changed to " + (board.GetLegalMoves().Length < 12 ? 6 : 4) + " because there are " + board.GetLegalMoves().Length + " moves possible.");
-                depthMax = board.GetLegalMoves().Length < 12 ? 6 : 4;
-            }
-
             return Minimax(board, depthMax, "BOT", botColor, -1000, 1000).Item1;
         }
 
